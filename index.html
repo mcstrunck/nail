@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#EEF0F6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nail Diary">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NAIL DIARY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF0F6; --paper:#FFFFFF; --ink:#000000; --muted:#000000; --line:#D9DCE8;
+  --clean:#22C55E; --nibble:#E3A21B; --bit:#FF3B4E; --empty:#E4E6EF; --unset:#9CA1AE; --focus:#5B5BD6;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
+main{max-width:980px;margin:0 auto;padding:20px 18px 48px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1{font-size:clamp(2rem,7vw,3rem);font-weight:800;letter-spacing:-.03em;line-height:1;margin:8px 0 22px}
+h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
+.sub{color:var(--muted);margin:0 0 22px}
+
+
+/* week: seven day columns side by side */
+.scroller{position:relative;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:9px 4px 6px}
+.nails{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));gap:8px}
+.row{display:flex;flex-direction:column;gap:8px;background:var(--paper);border:1.5px solid var(--line);border-radius:16px;padding:13px 8px 10px;
+  transition:background .2s,border-color .2s}
+.row.future{opacity:.45}
+.row.today{border:2.5px solid var(--ink)}
+.row{position:relative}
+.row.today::before{content:"TODAY";position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:1px 8px;background:var(--bg);border:1.5px solid var(--ink);border-radius:999px;font-size:.65rem;letter-spacing:.06em;line-height:1.4;color:var(--ink)}
+.row.is-bit{background:var(--bit);border-color:var(--bit)}
+.row.is-clean{background:var(--clean);border-color:var(--clean)}
+.row.is-bit .slot:not(.has),.row.is-clean .slot:not(.has){background:rgba(255,255,255,.3);border-color:rgba(0,0,0,.35)}
+@media (prefers-reduced-motion:reduce){.row{transition:none}}
+.label{text-align:center;line-height:1.2}
+.label b{display:block;font-weight:600;font-size:1.3rem;letter-spacing:.03em}
+.label span{font-size:.95rem}
+.slot{width:100%;aspect-ratio:4/3;border-radius:10px;border:1.5px dashed var(--line);background:var(--bg);padding:0;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);font-size:.75rem;font-weight:600;line-height:1.1}
+.slot.has{border-style:solid;border-color:transparent}
+.slot img{width:100%;height:100%;object-fit:cover;display:block}
+.slot:disabled{cursor:default}
+.status{display:flex;justify-content:center;gap:10px;padding:2px 0 6px}
+/* iOS-style toggle: left = bitten (red), middle = not set, right = not bitten (green) */
+.slider{position:relative;width:56px;height:34px;border-radius:999px;cursor:pointer;touch-action:none;
+  background:var(--unset);box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);transition:background .25s ease}
+.slider[aria-disabled="true"]{cursor:default}
+.slider[aria-disabled="true"][data-v]{background:#E9E9EB}
+.slider[data-v="-1"]{background:var(--bit)}
+.slider[data-v="1"]{background:var(--clean)}
+.row.is-bit .slider,.row.is-clean .slider{box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),0 0 0 2px rgba(255,255,255,.85)}
+.knob{position:absolute;top:2px;left:2px;width:30px;height:30px;border-radius:50%;background:#fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.15),0 3px 1px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.04);
+  transition:left .25s cubic-bezier(.3,.8,.4,1)}
+.slider[data-v="-1"] .knob{left:2px}
+.slider[data-v="1"] .knob{left:calc(100% - 32px)}
+.slider:not([aria-disabled="true"]):active .knob{width:34px}
+.slider[data-v="1"]:not([aria-disabled="true"]):active .knob{left:calc(100% - 36px)}
+@media (prefers-reduced-motion:reduce){.slider,.knob{transition:none}}
+
+
+.status button:disabled{cursor:default}
+.busy{font-size:.9rem;margin:12px 0 0}
+.err{color:var(--bit);font-size:.9rem;margin:12px 0 0}
+@media (max-width:400px){ main{padding-left:12px;padding-right:12px} }
+
+
+.stats{margin:4px 0 12px}
+.bar{padding:0}
+.bar .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+.bar .top span{color:var(--muted);font-size:.75rem;letter-spacing:.03em}
+.bar .top strong{font-weight:700;font-size:.9rem}
+.segs{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.segs.month{gap:3px}
+.segs.year{gap:4px;padding-top:22px}
+.ylabels{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;margin-top:3px;font-size:.65rem;text-align:center}
+.segs.year i{position:relative}
+.segs.year i.clean::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);width:20px;height:20px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFE066%22/%3E%3Cstop%20offset%3D%22.6%22%20stop-color%3D%22%23FFC61A%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F2A900%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath%20fill%3D%22url%28%23g%29%22%20stroke%3D%22%23C98A0E%22%20stroke-width%3D%221.4%22%20stroke-linejoin%3D%22round%22%20d%3D%22M12%202.5l2.6%206.9%207.3.3-5.7%204.6%202%207.1L12%2017.3l-6.2%204.1%202-7.1L2.1%209.7l7.3-.3z%22/%3E%3C/svg%3E") center/contain no-repeat}
+.segs.year i{border-radius:4px}
+.segs i.now{box-shadow:0 0 0 1.5px var(--ink)}
+.stats{display:flex;flex-direction:column;gap:12px}
+.segs i{height:8px;border-radius:4px;background:var(--line);transition:background .25s}
+.segs i.clean{background:var(--clean)}
+.segs i.bit{background:var(--bit)}
+.segs i.unset{background:var(--unset)}
+@media (prefers-reduced-motion:reduce){.segs i{transition:none}}
+
+
+
+.lightbox{position:fixed;inset:0;background:rgba(10,12,20,.9);display:none;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px);z-index:10}
+.lightbox.open{display:flex}
+.lightbox img{max-width:100%;max-height:100%;border-radius:10px}
+.lbbar{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;display:flex;gap:8px}
+.lbbar button{border:0;background:#fff;color:#111;border-radius:999px;padding:8px 14px;font-weight:600}
+.lbbar #lbRemove{color:#C2334B}
+
+/* week wheel (iOS picker style) */
+.picker{position:relative;height:calc(100dvh - 330px);min-height:400px;max-height:540px;overflow-y:auto;overscroll-behavior:contain;
+  scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;margin:0 -10px;padding:0 10px;
+  -webkit-mask-image:linear-gradient(transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(transparent,#000 14%,#000 86%,transparent)}
+.picker::-webkit-scrollbar{display:none}
+.spacer{flex:none}
+.wk{scroll-snap-align:center;scroll-snap-stop:always;margin:-38px 0;padding:12px 14px 12px;border-radius:24px;
+  transform-origin:center;will-change:transform,opacity;position:relative}
+.wk h2{font-size:1.05rem;font-weight:600;margin:0;line-height:1.2}
+.wk.current{background:linear-gradient(180deg,#585C68 0%,#474A54 45%,#3C3F48 100%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),inset 0 -4px 0 rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 30px -12px rgba(20,22,35,.6),0 6px 10px rgba(20,22,35,.22),0 1px 2px rgba(20,22,35,.3);padding:16px 16px 14px}
+.wk.current h2{color:#fff}
+
+.meter{margin-top:14px;max-width:420px}
+.mtop{display:flex;justify-content:space-between;gap:8px;font-size:.75rem;letter-spacing:.03em;margin-bottom:5px}
+.mtrack{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.mfill{height:100%;width:0;background:var(--ink);border-radius:3px}
+.meter.warn .mfill{background:var(--bit)}
+.mwarn{font-size:.8rem;margin:6px 0 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>NAIL DIARY<span class="emo" aria-hidden="true">💅</span></h1>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="picker" id="picker" aria-label="Weeks"></div>
+
+  <input type="file" id="file" accept="image/*" hidden>
+  <p class="busy" id="busy" hidden></p>
+  <p class="err" id="err" hidden></p>
+  <div class="meter" id="meter" hidden>
+    <div class="mtop"><span>STORAGE</span><span id="meterText"></span></div>
+    <div class="mtrack"><div class="mfill" id="meterFill"></div></div>
+    <p class="mwarn" id="meterWarn" hidden></p>
+  </div>
+</main>
+
+<div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="Photo">
+  <div class="lbbar">
+    <button id="lbReplace">Replace</button>
+    <button id="lbRemove">Remove</button>
+    <button id="lbClose">Close</button>
+  </div>
+  <img id="lbImg" alt="">
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const LABELS = {clean:"Didn't bite", nibble:"Nibbled", bit:"Bit them"};
+  const HANDS = [["left","Left hand","L"],["right","Right hand","R"]];
+
+  // ---------- dates ----------
+  const pad = n => String(n).padStart(2,"0");
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayKey = keyOf(today);
+  function mondayOf(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; }
+  // ISO 8601 week number (weeks start Monday; week 1 contains the year's first Thursday)
+  function isoWeek(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const day=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day);
+    const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y0)/86400000+1)/7); }
+  const addDays = (d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+
+  // ---------- state ----------
+  let days = {};              // key -> {status, left, right, note}
+  let mode = "local", assets=null, coll=null;
+  let pending = null;         // {key, hand} for the file picker
+
+  // older entries stored a photos[] list: first = left, second = right
+  function handPhoto(data, hand){
+    if(data[hand] !== undefined) return data[hand];
+    const i = hand==="left"?0:1;
+    return data.photos?.[i] || null;
+  }
+
+  // ---------- local fallback ----------
+  const LS_KEY = "naildiary:v1";
+  function lsLoad(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(e){ return {}; } }
+  function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(days)); return true; }catch(e){ return false; } }
+  // ---------- on-device photo store (IndexedDB: room for hundreds of MB, far beyond localStorage) ----------
+  const idb = (()=>{
+    let dbp=null;
+    const open=()=> dbp || (dbp=new Promise((res,rej)=>{
+      const r=indexedDB.open("naildiary",1);
+      r.onupgradeneeded=()=>r.result.createObjectStore("photos");
+      r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+    }));
+    const tx=(mode,fn)=>open().then(db=>new Promise((res,rej)=>{
+      const t=db.transaction("photos",mode), st=t.objectStore("photos"); const out=fn(st);
+      t.oncomplete=()=>res(out&&out.result!==undefined?out.result:undefined); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error);
+    }));
+    return {
+      put:(k,blob)=>tx("readwrite",st=>st.put(blob,k)),
+      del:(k)=>tx("readwrite",st=>st.delete(k)),
+      get:(k)=>tx("readonly",st=>st.get(k)),
+      all:()=>open().then(db=>new Promise((res,rej)=>{
+        const out=new Map(), t=db.transaction("photos","readonly"), c=t.objectStore("photos").openCursor();
+        c.onsuccess=()=>{ const cur=c.result; if(cur){ out.set(cur.key,cur.value); cur.continue(); } };
+        t.oncomplete=()=>res(out); t.onerror=()=>rej(t.error);
+      }))
+    };
+  })();
+  const idbUrls=new Map();   // key -> object URL
+  const idbSizes=new Map();  // key -> bytes
+  async function loadIdbPhotos(){
+    try{ const all=await idb.all(); all.forEach((blob,k)=>{ if(!idbUrls.has(k)){ idbUrls.set(k,URL.createObjectURL(blob)); idbSizes.set(k,blob.size); } }); }catch(e){}
+  }
+
+  function photoUrl(id){
+    if(!id) return "";
+    if(id.startsWith("idb:")) return idbUrls.get(id.slice(4)) || "";
+    if(id.startsWith("local:")){ try{ return localStorage.getItem("naildiary:ph:"+id.slice(6))||""; }catch(e){ return ""; } }
+    return "/_blob/" + id;
+  }
+
+  // ---------- images ----------
+  async function compress(file, max, q){
+    const bmp = await createImageBitmap(file);
+    const s = Math.min(1, max/Math.max(bmp.width,bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width*s); c.height = Math.round(bmp.height*s);
+    c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    return new Promise(r=>c.toBlob(r,"image/jpeg",q));
+  }
+  const blobToDataUrl = b => new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(b); });
+
+  // ---------- save ----------
+  function showErr(msg){ const e=$("err"); e.textContent=msg||""; e.hidden=!msg; }
+  async function saveDay(key, patch){
+    const cur = days[key] || {};
+    const next = {status:null, note:"", ...cur, ...patch};
+    // settle legacy photos[] into left/right once touched
+    if(cur.photos){ next.left = handPhoto(next,"left"); next.right = handPhoto(next,"right"); delete next.photos; }
+    days = {...days, [key]: next};
+    render();
+    showErr("");
+    if(mode==="cloud"){
+      try{ await coll.doc(key).set(next); }
+      catch(e){ showErr("Couldn't save this change. Check your connection and try again."); }
+    } else if(!lsSave()){
+      showErr("Storage is full on this device. Remove some photos to keep saving.");
+    }
+  }
+
+  async function discard(id){
+    if(!id) return;
+    try{
+      if(id.startsWith("idb:")){ const k=id.slice(4); await idb.del(k); const u=idbUrls.get(k); if(u) URL.revokeObjectURL(u); idbUrls.delete(k); idbSizes.delete(k); }
+      else if(id.startsWith("local:")) localStorage.removeItem("naildiary:ph:"+id.slice(6));
+      else if(assets) await assets.delete(id);
+    }catch(e){}
+  }
+
+  // ---------- storage meter ----------
+  const LOCAL_CAP = 500*1024*1024; // fallback guess if the browser won't report its quota
+  function fmtBytes(b){ return b>=1073741824 ? (b/1073741824).toFixed(1)+" GB" : b>=1048576 ? (b/1048576).toFixed(1)+" MB" : Math.max(1,Math.round(b/1024))+" KB"; }
+  async function updateMeter(){
+    let files=0, bytes=0, maxFiles=null, maxBytes=null;
+    try{
+      if(mode==="cloud" && assets){
+        const r=await assets.list(); const u=r.usage||{};
+        files=u.files??r.assets.length; bytes=u.bytes??0; maxFiles=u.maxFiles??null; maxBytes=u.maxBytes??null;
+      } else {
+        idbSizes.forEach(b=>{ bytes+=b; files++; });
+        for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
+          if(k && k.startsWith("naildiary:ph:")){ bytes+=(localStorage.getItem(k)||"").length*2; files++; } }
+        maxBytes=LOCAL_CAP;
+        try{ if(navigator.storage && navigator.storage.estimate){ const e=await navigator.storage.estimate(); if(e.quota){ maxBytes=e.quota; bytes=Math.max(bytes, e.usage||0); } } }catch(e){}
+      }
+    }catch(e){ return; }
+    const pctB = maxBytes ? bytes/maxBytes : 0, pctF = maxFiles ? files/maxFiles : 0, pct=Math.max(pctB,pctF);
+    let txt = `${files} photo${files===1?"":"s"} · ${fmtBytes(bytes)}` + (maxBytes?` of ${fmtBytes(maxBytes)}`:"");
+    if(maxFiles) txt += ` · max ${maxFiles} files`;
+    if(mode!=="cloud" && maxBytes){ const avg=files?Math.max(bytes/files,60*1024):160*1024; const left=Math.max(0,Math.floor((maxBytes-bytes)/avg)); txt += ` · room for ~${left.toLocaleString()} more`; }
+    $("meterText").textContent = txt;
+    $("meterFill").style.width = Math.min(100, Math.max(pct>0?1:0, pct*100)).toFixed(1)+"%";
+    const m=$("meter"); m.hidden=false; m.classList.toggle("warn", pct>=.8);
+    const w=$("meterWarn");
+    if(pct>=.8){
+      // estimate photos left from the average size so far
+      const avg = files ? bytes/files : 300*1024;
+      const leftB = maxBytes ? Math.floor((maxBytes-bytes)/avg) : Infinity, leftF = maxFiles ? maxFiles-files : Infinity;
+      const left = Math.max(0, Math.min(leftB,leftF));
+      w.textContent = `Storage is ${Math.round(pct*100)}% full — room for about ${left} more photo${left===1?"":"s"}. Remove old photos to free space.`;
+      w.hidden=false;
+    } else w.hidden=true;
+  }
+
+  function pickPhoto(key, hand){ pending={key,hand}; $("file").click(); }
+  let viewing=null;
+  function openPhoto(src,key,hand){ viewing={key,hand}; $("lbImg").src=src; $("lb").classList.add("open"); $("lbClose").focus(); }
+
+  // ---------- render ----------
+  // effective status: a day counts as bitten (red) unless it's switched to green; future days don't count yet
+  // a day is only red or green once you've switched it; until then it's grey
+  function effStatus(k, d){
+    const st=days[k]?.status;
+    return st==="clean"||st==="bit" ? st : null;
+  }
+
+  // one iOS-style toggle per day: left = bitten (red, default), right = not bitten (green)
+  function makeSlider(k, status, future, d){
+    const wrap=document.createElement("div"); wrap.className="status";
+    const sl=document.createElement("div"); sl.className="slider";
+    const on = status==="clean";
+    sl.dataset.v = status==="clean" ? "1" : status==="bit" ? "-1" : "0";
+    sl.setAttribute("role","switch");
+    sl.setAttribute("aria-checked", String(on));
+    sl.setAttribute("aria-label",`Not bitten on ${d.toLocaleDateString(undefined,{weekday:"long"})}`);
+    const knob=document.createElement("span"); knob.className="knob"; sl.appendChild(knob);
+    if(future){ sl.setAttribute("aria-disabled","true"); wrap.appendChild(sl); return wrap; }
+    sl.tabIndex=0;
+    const set=v=>{ if(status && v===on) return; sl.dataset.v = v ? "1" : "-1"; saveDay(k,{status: v ? "clean" : "bit"}); };
+    let startX=null, dragged=false;
+    sl.addEventListener("pointerdown",e=>{ startX=e.clientX; dragged=false; sl.setPointerCapture(e.pointerId); });
+    sl.addEventListener("pointermove",e=>{
+      if(startX===null) return;
+      const dx=e.clientX-startX; if(Math.abs(dx)>6){ dragged=true; sl.dataset.v = dx>0 ? "1" : "-1"; }
+    });
+    sl.addEventListener("pointerup",e=>{
+      if(startX===null) return; startX=null;
+      if(dragged) return set(sl.dataset.v==="1");
+      // not switched yet: tap the left half for red, the right half for green
+      if(!status){ const r=sl.getBoundingClientRect(); return set(e.clientX >= r.left + r.width/2); }
+      set(!on);
+    });
+    sl.addEventListener("pointercancel",()=>{ startX=null; sl.dataset.v = status==="clean" ? "1" : status==="bit" ? "-1" : "0"; });
+    sl.addEventListener("keydown",e=>{
+      if(e.key==="ArrowRight"||e.key==="ArrowUp"){ e.preventDefault(); set(true); }
+      else if(e.key==="ArrowLeft"||e.key==="ArrowDown"){ e.preventDefault(); set(false); }
+      else if(e.key===" "||e.key==="Enter"){ e.preventDefault(); set(!on); }
+    });
+    wrap.appendChild(sl); return wrap;
+  }
+
+  function buildWeek(wrap, mon){
+    const fmt = d => d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    wrap.innerHTML="";
+    for(let i=0;i<7;i++){
+      const d=addDays(mon,i), k=keyOf(d), data=days[k]||{}, future=d>today;
+      const row=document.createElement("div");
+      const eff=effStatus(k,d);
+      row.className="row"+(k===todayKey?" today":"")+(future?" future":"")+(eff==="bit"?" is-bit":eff==="clean"?" is-clean":"");
+      row.setAttribute("role","listitem");
+
+      const label=document.createElement("div"); label.className="label";
+      const title=document.createElement("b");
+      title.textContent=d.toLocaleDateString(undefined,{weekday:"short"}).toUpperCase().replace(".","");
+      const sub=document.createElement("span"); sub.textContent=fmt(d);
+      label.append(title,sub);
+      row.appendChild(label);
+
+      const st=makeSlider(k, eff, future, d);
+      row.insertBefore(st,row.firstChild);
+      HANDS.forEach(([hand,name,short])=>{
+        const id=handPhoto(data,hand);
+        const sl=document.createElement("button"); sl.className="slot "+short.toLowerCase()+(id?" has":""); sl.disabled=future;
+        if(id){ const img=document.createElement("img"); img.src=photoUrl(id); img.alt=""; img.loading="lazy"; sl.appendChild(img);
+          sl.setAttribute("aria-label",`${name} photo, ${fmt(d)}. Open`);
+          sl.onclick=()=>openPhoto(img.src,k,hand);
+        } else {
+          sl.innerHTML=`<span aria-hidden="true">＋</span>${short}`;
+          sl.setAttribute("aria-label",`Add ${name.toLowerCase()} photo for ${fmt(d)}`);
+          sl.onclick=()=>pickPhoto(k,hand);
+        }
+        row.appendChild(sl);
+      });
+
+      wrap.appendChild(row);
+    }
+
+  }
+
+  function render(){
+    const fmt = d => d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+
+    weeks.forEach(w=>{
+      const mon=addDays(mondayOf(today), w.off*7);
+      w.title.textContent=`WEEK ${isoWeek(mon)} · ${fmt(mon)} – ${fmt(addDays(mon,6))}`;
+      buildWeek(w.nails, mon);
+    });
+
+    // month bar: one segment per day of the current month
+    const mLen=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+    let mClean=0;
+    const mSegs=[...Array(mLen)].map((_,i)=>{
+      const dd=new Date(today.getFullYear(),today.getMonth(),i+1); const st=effStatus(keyOf(dd),dd) || (dd<=today?"unset":null);
+      if(st==="clean") mClean++;
+      return `<i class="${st||""}"></i>`;
+    }).join("");
+    // year bar: one segment per month
+    //   a week belongs to the month its Thursday falls in (same rule as the WEEK numbers)
+    //   green = every week in the month fully green, red = any bitten day in those weeks, grey = otherwise
+    const yr=today.getFullYear(), yLen=12;
+    const weekState=mon=>{
+      const sts=[...Array(7)].map((_,j)=>{ const dd=addDays(mon,j); return effStatus(keyOf(dd),dd); });
+      return sts.includes("bit") ? "bit" : sts.every(x=>x==="clean") ? "clean" : "open";
+    };
+    let yGreen=0;
+    const ySegs=[...Array(12)].map((_,m)=>{
+      const first=new Date(yr,m,1), last=new Date(yr,m+1,0);
+      const states=[];
+      for(let mon=mondayOf(first); mon<=last; mon=addDays(mon,7)){
+        const thu=addDays(mon,3);
+        if(thu.getMonth()===m && thu.getFullYear()===yr) states.push(weekState(mon));
+      }
+      const cls = states.includes("bit") ? "bit" : states.every(x=>x==="clean") ? "clean" : (first<=today ? "unset" : "");
+      if(cls==="clean") yGreen++;
+      const name=first.toLocaleDateString(undefined,{month:"long"});
+      return `<i class="${cls}${m===today.getMonth()?" now":""}" title="${name}"></i>`;
+    }).join("");
+    const yLabels=[...Array(12)].map((_,m)=>`<span>${new Date(yr,m,1).toLocaleDateString(undefined,{month:"narrow"})}</span>`).join("");
+    $("stats").innerHTML=
+      `<div class="bar" role="img" aria-label="${mClean} of ${mLen} bite-free days this month">
+        <div class="top"><span>THIS MONTH</span><strong>${mClean}/${mLen}</strong></div>
+        <div class="segs month" style="grid-template-columns:repeat(${mLen},1fr)">${mSegs}</div></div>`+
+      `<div class="bar" role="img" aria-label="${yGreen} of 12 months fully bite-free this year">
+        <div class="top"><span>THIS YEAR</span><strong>${yGreen}/${yLen}</strong></div>
+        <div class="segs year" style="grid-template-columns:repeat(${yLen},1fr)">${ySegs}</div>
+        <div class="ylabels">${yLabels}</div></div>`;
+  }
+
+  // ---------- events ----------
+  $("file").onchange=async e=>{
+    const f=e.target.files[0]; e.target.value=""; if(!f||!pending) return;
+    const {key,hand}=pending; pending=null;
+    const busy=$("busy"); busy.hidden=false; busy.textContent="Uploading…"; showErr("");
+    let newId=null;
+    try{
+      if(mode==="cloud"){ newId=(await assets.upload(await compress(f,1600,.85))).id; }
+      else { const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+        const blob=await compress(f,1200,.8);
+        await idb.put(id, blob);
+        idbUrls.set(id, URL.createObjectURL(blob)); idbSizes.set(id, blob.size); newId="idb:"+id;
+        // ask the browser to keep this data instead of clearing it when space runs low
+        try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){} }
+    }catch(err){ showErr(mode==="cloud"?"The photo didn't upload. Try again, or use a smaller image.":"This device is out of space for photos. Remove older ones to add more."); }
+    busy.hidden=true;
+    if(newId){ const old=handPhoto(days[key]||{},hand); await saveDay(key,{[hand]:newId}); if(old) await discard(old); updateMeter(); }
+  };
+  const closeLb=()=>$("lb").classList.remove("open");
+  $("lbClose").onclick=closeLb;
+  $("lbReplace").onclick=()=>{ if(!viewing) return; closeLb(); pickPhoto(viewing.key,viewing.hand); };
+  $("lbRemove").onclick=async()=>{ if(!viewing||!confirm("Remove this photo?")) return;
+    const {key,hand}=viewing, old=handPhoto(days[key]||{},hand); closeLb(); await saveDay(key,{[hand]:null}); await discard(old); updateMeter(); }; $("lb").onclick=e=>{ if(e.target.id==="lb") closeLb(); };
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeLb(); });
+
+  // ---------- boot ----------
+  // ---------- week wheel ----------
+  const WEEKS_BACK=3, WEEKS_AHEAD=3;
+  const picker=$("picker"), weeks=[];
+  const topSp=document.createElement("div"); topSp.className="spacer"; picker.appendChild(topSp);
+  for(let off=-WEEKS_BACK; off<=WEEKS_AHEAD; off++){
+    const el=document.createElement("section"); el.className="wk"+(off===0?" current":"");
+    const title=document.createElement("h2");
+    const sc=document.createElement("div"); sc.className="scroller";
+    const nails=document.createElement("div"); nails.className="nails"; nails.setAttribute("role","list");
+    sc.appendChild(nails); el.append(title,sc); picker.appendChild(el);
+    weeks.push({off, el, title, nails, sc});
+  }
+  const botSp=document.createElement("div"); botSp.className="spacer"; picker.appendChild(botSp);
+  const current=weeks.find(w=>w.off===0);
+  const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function sizeSpacers(){
+    const h=(picker.clientHeight - current.el.offsetHeight)/2;
+    topSp.style.height=botSp.style.height=Math.max(0,h)+"px";
+  }
+  function wheel(){
+    const box=picker.getBoundingClientRect(), mid=box.top+box.height/2;
+    weeks.forEach(w=>{
+      const r=w.el.getBoundingClientRect();
+      const d=((r.top+r.height/2)-mid)/box.height;          // -0.5..0.5 inside view
+      const a=Math.min(Math.abs(d)*2,1);
+      const scale=1-a*.42, op=1-a*.55;
+      w.el.style.transform = reduceMotion ? `scale(${scale})` : `perspective(1100px) rotateX(${(-d*38).toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      w.el.style.opacity=op.toFixed(3);
+      w.el.style.zIndex=String(100-Math.round(a*100));
+    });
+  }
+  let ticking=false;
+  picker.addEventListener("scroll",()=>{ if(!ticking){ ticking=true; requestAnimationFrame(()=>{ wheel(); ticking=false; }); } },{passive:true});
+  function centerOn(w, smooth){
+    const top=w.el.offsetTop - (picker.clientHeight - w.el.offsetHeight)/2;
+    picker.scrollTo({top, behavior: smooth&&!reduceMotion?"smooth":"auto"});
+  }
+  addEventListener("resize",()=>{ sizeSpacers(); wheel(); });
+
+  // always open on this week: stop the browser restoring an old scroll spot,
+  // and re-centre once fonts and synced data have settled the layout
+  if("scrollRestoration" in history) history.scrollRestoration="manual";
+  let userScrolled=false;
+  ["wheel","touchstart","keydown","pointerdown"].forEach(ev=>picker.addEventListener(ev,()=>{ userScrolled=true; },{passive:true,once:true}));
+  function openOnThisWeek(){ if(userScrolled) return; window.scrollTo(0,0); sizeSpacers(); centerOn(current,false); wheel(); }
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(openOnThisWeek);
+  addEventListener("pageshow",e=>{ if(e.persisted){ userScrolled=false; openOnThisWeek(); } });
+  // if the app stays open past midnight (or into a new week), reload so "this week" is right
+  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && keyOf(new Date())!==todayKey) location.reload(); });
+
+  days=lsLoad(); render(); updateMeter();
+  loadIdbPhotos().then(()=>{ render(); updateMeter(); });
+  requestAnimationFrame(()=>{
+    openOnThisWeek();
+    // on narrow screens, start this week scrolled sideways to today
+    const t=current.sc.querySelector(".row.today");
+    if(t && current.sc.scrollWidth>current.sc.clientWidth) current.sc.scrollLeft = t.offsetLeft - current.sc.clientWidth/2 + t.offsetWidth/2;
+  });
+  (async()=>{
+    if(!window.claude||!window.claude.use) return;
+    try{
+      const [d,a,u]=await Promise.all([claude.use("db"),claude.use("assets"),claude.use("user")]);
+      const uid=u?await u.id():null;
+      if(!d||!a||!uid) return;
+      assets=a; coll=d.collection("data/users/"+uid);
+      coll.onSnapshot(snap=>{
+        const next={}; snap.docs.forEach(doc=>{ if(doc.exists) next[doc.id]=doc.data(); });
+        const first = mode!=="cloud";
+        mode="cloud"; days=next; render(); if(first){ updateMeter(); requestAnimationFrame(openOnThisWeek); }
+      },()=>{});
+    }catch(e){}
+  })();
+})();
+</script>
+</body>
+</html>

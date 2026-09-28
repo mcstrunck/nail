@@ -27,7 +27,7 @@
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45}
-main{max-width:980px;margin:0 auto;padding:20px 18px 48px}
+main{max-width:1140px;margin:0 auto;padding:20px 18px 48px}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
@@ -52,7 +52,7 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
 .label{text-align:center;line-height:1.2}
 .label b{display:block;font-weight:600;font-size:1.3rem;letter-spacing:.03em}
 .label span{font-size:.95rem}
-.slot{width:100%;aspect-ratio:4/3;border-radius:10px;border:1.5px dashed var(--line);background:var(--bg);padding:0;overflow:hidden;
+.slot{width:100%;aspect-ratio:1/1;border-radius:10px;border:1.5px dashed var(--line);background:var(--bg);padding:0;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);font-size:.75rem;font-weight:600;line-height:1.1}
 .slot.has{border-style:solid;border-color:transparent}
 .slot img{width:100%;height:100%;object-fit:cover;display:block}
@@ -80,6 +80,14 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
 .busy{font-size:.9rem;margin:12px 0 0}
 .err{color:var(--bit);font-size:.9rem;margin:12px 0 0}
 @media (max-width:400px){ main{padding-left:12px;padding-right:12px} }
+/* iPhone: wider day columns (bigger photos) and a swipe that snaps to each day */
+@media (max-width:520px){
+  .nails{grid-template-columns:repeat(7,minmax(124px,1fr));gap:8px}
+  .scroller{scroll-snap-type:x mandatory;scroll-padding-left:4px}
+  .row{scroll-snap-align:start}
+  .wk.current{padding:16px 10px 12px}
+  .wk.current .nails{gap:8px}
+}
 
 
 .stats{margin:4px 0 12px}
@@ -120,7 +128,10 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
 .wk{scroll-snap-align:center;scroll-snap-stop:always;margin:-38px 0;padding:12px 14px 12px;border-radius:24px;
   transform-origin:center;will-change:transform,opacity;position:relative}
 .wk h2{font-size:1.05rem;font-weight:600;margin:0;line-height:1.2}
-.wk.current{background:linear-gradient(180deg,#585C68 0%,#474A54 45%,#3C3F48 100%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),inset 0 -4px 0 rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 30px -12px rgba(20,22,35,.6),0 6px 10px rgba(20,22,35,.22),0 1px 2px rgba(20,22,35,.3);padding:16px 16px 14px}
+.wk.current{background:linear-gradient(180deg,#585C68 0%,#474A54 45%,#3C3F48 100%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),inset 0 -4px 0 rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.05),0 18px 30px -12px rgba(20,22,35,.6),0 6px 10px rgba(20,22,35,.22),0 1px 2px rgba(20,22,35,.3);padding:18px 14px 16px}
+.wk.current .nails{gap:10px}
+.wk.current .row{padding:14px 7px 8px;gap:8px}
+.wk.current h2{font-size:1.15rem;margin-bottom:2px}
 .wk.current h2{color:#fff}
 
 .meter{margin-top:14px;max-width:420px}
@@ -129,6 +140,24 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
 .mfill{height:100%;width:0;background:var(--ink);border-radius:3px}
 .meter.warn .mfill{background:var(--bit)}
 .mwarn{font-size:.8rem;margin:6px 0 0}
+
+/* crop and zoom before saving a photo */
+.crop{position:fixed;inset:0;z-index:20;background:rgba(10,12,20,.92);display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.crop[hidden]{display:none}
+.cropbox{width:min(92vw,68vh,560px)}
+.croptitle{color:#fff;font-weight:600;margin:0 0 10px;text-align:center}
+.cropview{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;border-radius:12px;background:#000;touch-action:none;cursor:grab}
+.cropview:active{cursor:grabbing}
+.cropview img{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;user-select:none;-webkit-user-select:none;pointer-events:none}
+.cropview::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:12px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.9);
+  background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.35) 0 calc(33.33% + .5px),transparent 0 calc(66.66% - .5px),rgba(255,255,255,.35) 0 calc(66.66% + .5px),transparent 0),
+             linear-gradient(0deg,transparent calc(33.33% - .5px),rgba(255,255,255,.35) 0 calc(33.33% + .5px),transparent 0 calc(66.66% - .5px),rgba(255,255,255,.35) 0 calc(66.66% + .5px),transparent 0)}
+.cropzoom{display:flex;align-items:center;gap:10px;margin:14px 4px;color:#fff;font-size:1.2rem}
+.cropzoom input{flex:1;accent-color:#fff}
+.cropbar{display:flex;gap:10px}
+.cropbar button{flex:1;height:44px;border-radius:999px;border:1.5px solid rgba(255,255,255,.6);background:transparent;color:#fff;font-weight:600}
+.cropbar .primary{background:#fff;color:#000;border-color:#fff}
 </style>
 </head>
 <body>
@@ -148,6 +177,19 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
     <p class="mwarn" id="meterWarn" hidden></p>
   </div>
 </main>
+
+<div class="crop" id="crop" role="dialog" aria-modal="true" aria-label="Crop photo" hidden>
+  <div class="cropbox">
+    <p class="croptitle" id="cropTitle">Crop photo</p>
+    <div class="cropview" id="cropView" tabindex="0" aria-label="Drag to move, pinch or use the slider to zoom"><img id="cropImg" alt="" draggable="false"></div>
+    <div class="cropzoom">
+      <span aria-hidden="true">−</span>
+      <input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1" aria-label="Zoom">
+      <span aria-hidden="true">+</span>
+    </div>
+    <div class="cropbar"><button id="cropCancel">Cancel</button><button id="cropOk" class="primary">Use photo</button></div>
+  </div>
+</div>
 
 <div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="Photo">
   <div class="lbbar">
@@ -237,6 +279,81 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
     c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
     return new Promise(r=>c.toBlob(r,"image/jpeg",q));
   }
+  // ---------- crop and zoom ----------
+  // opens the photo in a 4:3 frame (same shape as the L/R spots); drag to move, pinch/slider/wheel to zoom
+  function cropPhoto(file, outW, quality, title){
+    return new Promise(resolve=>{
+      const box=$("crop"), view=$("cropView"), img=$("cropImg"), zoom=$("cropZoom");
+      const url=URL.createObjectURL(file);
+      let natW=0, natH=0, base=1, z=1, tx=0, ty=0;
+      const pts=new Map(); let pinch=null, last=null;
+      const vw=()=>view.clientWidth, vh=()=>view.clientHeight;
+      const scale=()=>base*z;
+      function clamp(){
+        const w=natW*scale(), h=natH*scale();
+        tx=Math.min(0,Math.max(vw()-w,tx)); ty=Math.min(0,Math.max(vh()-h,ty));
+      }
+      function draw(){ clamp(); img.style.transform=`translate(${tx}px,${ty}px) scale(${scale()})`; zoom.value=String(z); }
+      function zoomAt(nz,cx,cy){
+        nz=Math.max(1,Math.min(4,nz));
+        const ix=(cx-tx)/scale(), iy=(cy-ty)/scale();
+        z=nz; tx=cx-ix*scale(); ty=cy-iy*scale(); draw();
+      }
+      function fit(){
+        base=Math.max(vw()/natW, vh()/natH);
+        tx=(vw()-natW*scale())/2; ty=(vh()-natH*scale())/2; draw();
+      }
+      const onDown=e=>{ view.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        if(pts.size===2){ const [a,b]=[...pts.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y), z}; } last={x:e.clientX,y:e.clientY}; };
+      const onMove=e=>{
+        if(!pts.has(e.pointerId)) return;
+        pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        const r=view.getBoundingClientRect();
+        if(pts.size>=2 && pinch){
+          const [a,b]=[...pts.values()];
+          zoomAt(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d, (a.x+b.x)/2-r.left, (a.y+b.y)/2-r.top);
+        } else if(last){ tx+=e.clientX-last.x; ty+=e.clientY-last.y; draw(); }
+        last={x:e.clientX,y:e.clientY};
+      };
+      const onUp=e=>{ pts.delete(e.pointerId); if(pts.size<2) pinch=null; const p=[...pts.values()][0]; last=p?{...p}:null; };
+      const onWheel=e=>{ e.preventDefault(); const r=view.getBoundingClientRect(); zoomAt(z*Math.exp(-e.deltaY*0.0015), e.clientX-r.left, e.clientY-r.top); };
+      const onZoom=()=>zoomAt(Number(zoom.value), vw()/2, vh()/2);
+      const onKey=e=>{
+        if(e.key==="Escape") return done(false);
+        if(e.key==="Enter") return done(true);
+        const step=20, m={ArrowLeft:[step,0],ArrowRight:[-step,0],ArrowUp:[0,step],ArrowDown:[0,-step]}[e.key];
+        if(m){ e.preventDefault(); tx+=m[0]; ty+=m[1]; draw(); }
+        if(e.key==="+"||e.key==="="){ zoomAt(z*1.15, vw()/2, vh()/2); }
+        if(e.key==="-"){ zoomAt(z/1.15, vw()/2, vh()/2); }
+      };
+      const onResize=()=>{ if(natW) fit(); };
+      function cleanup(){
+        view.removeEventListener("pointerdown",onDown); view.removeEventListener("pointermove",onMove);
+        view.removeEventListener("pointerup",onUp); view.removeEventListener("pointercancel",onUp);
+        view.removeEventListener("wheel",onWheel); zoom.removeEventListener("input",onZoom);
+        document.removeEventListener("keydown",onKey); removeEventListener("resize",onResize);
+        $("cropOk").onclick=$("cropCancel").onclick=null;
+        box.hidden=true; img.removeAttribute("src"); URL.revokeObjectURL(url);
+      }
+      function done(ok){
+        if(!ok){ cleanup(); return resolve(null); }
+        const outH=outW, c=document.createElement("canvas"); c.width=outW; c.height=outH;
+        const s=scale(), ctx=c.getContext("2d"); ctx.imageSmoothingQuality="high";
+        ctx.drawImage(img, -tx/s, -ty/s, vw()/s, vh()/s, 0, 0, outW, outH);
+        c.toBlob(b=>{ cleanup(); resolve(b); }, "image/jpeg", quality);
+      }
+      $("cropTitle").textContent=title||"Crop photo";
+      $("cropOk").onclick=()=>done(true); $("cropCancel").onclick=()=>done(false);
+      view.addEventListener("pointerdown",onDown); view.addEventListener("pointermove",onMove);
+      view.addEventListener("pointerup",onUp); view.addEventListener("pointercancel",onUp);
+      view.addEventListener("wheel",onWheel,{passive:false}); zoom.addEventListener("input",onZoom);
+      document.addEventListener("keydown",onKey); addEventListener("resize",onResize);
+      img.onload=()=>{ natW=img.naturalWidth; natH=img.naturalHeight; box.hidden=false; z=1; requestAnimationFrame(()=>{ fit(); view.focus(); }); };
+      img.onerror=()=>{ cleanup(); resolve(null); showErr("That photo couldn't be opened. Try a different one."); };
+      img.src=url;
+    });
+  }
+
   const blobToDataUrl = b => new Promise(r=>{ const f=new FileReader(); f.onload=()=>r(f.result); f.readAsDataURL(b); });
 
   // ---------- save ----------
@@ -439,12 +556,16 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
   $("file").onchange=async e=>{
     const f=e.target.files[0]; e.target.value=""; if(!f||!pending) return;
     const {key,hand}=pending; pending=null;
+    const dd=new Date(key+"T00:00:00");
+    const title=`${hand==="left"?"Left":"Right"} hand · ${dd.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})}`;
+    const cropped=await cropPhoto(f, mode==="cloud"?1600:1200, mode==="cloud"?.85:.8, title);
+    if(!cropped) return;
     const busy=$("busy"); busy.hidden=false; busy.textContent="Uploading…"; showErr("");
     let newId=null;
     try{
-      if(mode==="cloud"){ newId=(await assets.upload(await compress(f,1600,.85))).id; }
+      if(mode==="cloud"){ newId=(await assets.upload(cropped)).id; }
       else { const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-        const blob=await compress(f,1200,.8);
+        const blob=cropped;
         await idb.put(id, blob);
         idbUrls.set(id, URL.createObjectURL(blob)); idbSizes.set(id, blob.size); newId="idb:"+id;
         // ask the browser to keep this data instead of clearing it when space runs low
@@ -478,6 +599,9 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
   const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function sizeSpacers(){
+    picker.style.height="";
+    const need=current.el.offsetHeight+70;
+    if(picker.clientHeight<need) picker.style.height=need+"px";
     const h=(picker.clientHeight - current.el.offsetHeight)/2;
     topSp.style.height=botSp.style.height=Math.max(0,h)+"px";
   }
@@ -488,7 +612,9 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
       const d=((r.top+r.height/2)-mid)/box.height;          // -0.5..0.5 inside view
       const a=Math.min(Math.abs(d)*2,1);
       const scale=1-a*.42, op=1-a*.55;
-      w.el.style.transform = reduceMotion ? `scale(${scale})` : `perspective(1100px) rotateX(${(-d*38).toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+      // pull smaller weeks toward the middle so the gap left by shrinking closes up
+      const pull = -Math.sign(d) * (1-scale) * r.height/scale * 0.5 * 0.62;
+      w.el.style.transform = reduceMotion ? `translateY(${pull.toFixed(1)}px) scale(${scale})` : `translateY(${pull.toFixed(1)}px) perspective(1100px) rotateX(${(-d*38).toFixed(2)}deg) scale(${scale.toFixed(3)})`;
       w.el.style.opacity=op.toFixed(3);
       w.el.style.zIndex=String(100-Math.round(a*100));
     });

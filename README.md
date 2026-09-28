@@ -3,7 +3,7 @@
 A small nail-biting tracker: switch each day to red (bitten) or green (not bitten),
 add a left- and right-hand photo, and watch the month and year fill in.
 
-Live: https://mcstrunck.github.io/nail-diary/
+Live: https://mcstrunck.github.io/nail/
 
 ## How data is stored on GitHub Pages
 Everything is saved **on the device you use**: red/green days in localStorage,

@@ -165,19 +165,19 @@ header.top h1{margin:0}
 .viewbtn{flex:none;height:38px;padding:0 16px;border-radius:999px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);
   font-size:.8rem;font-weight:600;letter-spacing:.05em;box-shadow:0 2px 4px rgba(20,22,35,.15)}
 .viewbtn[aria-pressed="true"]{background:var(--ink);color:#fff}
-.compare{max-width:760px;margin:0 auto}
-.cmphead,.cmprow{display:grid;grid-template-columns:78px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
+.compare{max-width:940px;margin:0 auto}
+.cmphead,.cmprow{display:grid;grid-template-columns:50px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
 .cmphead{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);padding:8px 0;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-align:center}
 .cmplist{display:flex;flex-direction:column;gap:10px;padding-bottom:20px}
-.cmpdate{line-height:1.2;border-left:4px solid var(--unset);padding-left:8px}
-.cmpdate b{display:block;font-size:.95rem;letter-spacing:.03em}
-.cmpdate span{font-size:.78rem}
+.cmpdate{line-height:1.2;border-left:3px solid var(--unset);padding-left:6px}
+.cmpdate b{display:block;font-size:.72rem;letter-spacing:.03em}
+.cmpdate span{font-size:.62rem}
 .cmprow.is-bit .cmpdate{border-color:var(--bit)} .cmprow.is-clean .cmpdate{border-color:var(--clean)}
 .cmpph{aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:0;padding:0;background:var(--empty);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--ink)}
 .cmpph img{width:100%;height:100%;object-fit:cover;display:block}
 .cmpph.none{border:1.5px dashed var(--line);background:transparent;cursor:default}
 .cmpempty{text-align:center;padding:40px 10px;line-height:1.5}
-@media (max-width:520px){ .cmphead,.cmprow{grid-template-columns:58px minmax(0,1fr) minmax(0,1fr);gap:6px} .viewbtn{height:34px;padding:0 12px;font-size:.72rem} }
+@media (max-width:520px){ .cmphead,.cmprow{grid-template-columns:40px minmax(0,1fr) minmax(0,1fr);gap:5px} .cmpdate{padding-left:4px} .cmpdate b{font-size:.62rem} .cmpdate span{font-size:.56rem} .viewbtn{height:34px;padding:0 12px;font-size:.72rem} }
 </style>
 </head>
 <body>

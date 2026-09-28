@@ -31,7 +31,7 @@ main{max-width:1140px;margin:0 auto;padding:20px 18px 48px}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-h1{font-size:clamp(2rem,7vw,3rem);font-weight:800;letter-spacing:-.03em;line-height:1;margin:8px 0 22px}
+h1{font-size:clamp(2rem,7vw,3rem);font-weight:800;letter-spacing:-.03em;line-height:1;margin:0}
 h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
 .sub{color:var(--muted);margin:0 0 22px}
 
@@ -158,12 +158,41 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
 .cropbar{display:flex;gap:10px}
 .cropbar button{flex:1;height:44px;border-radius:999px;border:1.5px solid rgba(255,255,255,.6);background:transparent;color:#fff;font-weight:600}
 .cropbar .primary{background:#fff;color:#000;border-color:#fff}
+
+/* header + compare view */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 22px}
+header.top h1{margin:0}
+.viewbtn{flex:none;height:38px;padding:0 16px;border-radius:999px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);
+  font-size:.8rem;font-weight:600;letter-spacing:.05em;box-shadow:0 2px 4px rgba(20,22,35,.15)}
+.viewbtn[aria-pressed="true"]{background:var(--ink);color:#fff}
+.compare{max-width:760px;margin:0 auto}
+.cmphead,.cmprow{display:grid;grid-template-columns:78px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
+.cmphead{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);padding:8px 0;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-align:center}
+.cmplist{display:flex;flex-direction:column;gap:10px;padding-bottom:20px}
+.cmpdate{line-height:1.2;border-left:4px solid var(--unset);padding-left:8px}
+.cmpdate b{display:block;font-size:.95rem;letter-spacing:.03em}
+.cmpdate span{font-size:.78rem}
+.cmprow.is-bit .cmpdate{border-color:var(--bit)} .cmprow.is-clean .cmpdate{border-color:var(--clean)}
+.cmpph{aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:0;padding:0;background:var(--empty);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--ink)}
+.cmpph img{width:100%;height:100%;object-fit:cover;display:block}
+.cmpph.none{border:1.5px dashed var(--line);background:transparent;cursor:default}
+.cmpempty{text-align:center;padding:40px 10px;line-height:1.5}
+@media (max-width:520px){ .cmphead,.cmprow{grid-template-columns:58px minmax(0,1fr) minmax(0,1fr);gap:6px} .viewbtn{height:34px;padding:0 12px;font-size:.72rem} }
 </style>
 </head>
 <body>
 <main>
-  <h1>NAIL DIARY<span class="emo" aria-hidden="true">💅</span></h1>
+  <header class="top">
+    <h1>NAIL DIARY<span class="emo" aria-hidden="true">💅</span></h1>
+    <button class="viewbtn" id="viewBtn" aria-pressed="false">COMPARE VIEW</button>
+  </header>
 
+  <section class="compare" id="compare" hidden aria-label="Compare view: all photos by date">
+    <div class="cmphead"><span></span><span>LEFT HAND</span><span>RIGHT HAND</span></div>
+    <div class="cmplist" id="cmpList"></div>
+  </section>
+
+  <div id="tracker">
   <div class="stats" id="stats"></div>
 
   <div class="picker" id="picker" aria-label="Weeks"></div>
@@ -175,6 +204,7 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
     <div class="mtop"><span>STORAGE</span><span id="meterText"></span></div>
     <div class="mtrack"><div class="mfill" id="meterFill"></div></div>
     <p class="mwarn" id="meterWarn" hidden></p>
+  </div>
   </div>
 </main>
 
@@ -550,7 +580,48 @@ h1 .emo{font-size:.7em;line-height:1;vertical-align:.2em;margin-left:-.1em}
         <div class="top"><span>THIS YEAR</span><strong>${yGreen}/${yLen}</strong></div>
         <div class="segs year" style="grid-template-columns:repeat(${yLen},1fr)">${ySegs}</div>
         <div class="ylabels">${yLabels}</div></div>`;
+    if(typeof comparing!=="undefined" && comparing) renderCompare();
   }
+
+  // ---------- compare view: every photo, oldest at the top, left and right side by side ----------
+  function renderCompare(){
+    const list=$("cmpList"); if(!list) return;
+    const keys=Object.keys(days).filter(k=>handPhoto(days[k],"left")||handPhoto(days[k],"right")).sort();
+    list.innerHTML="";
+    if(!keys.length){
+      const p=document.createElement("p"); p.className="cmpempty";
+      p.textContent="No photos yet. Add L and R photos to your days, then come back here to compare them.";
+      list.appendChild(p); return;
+    }
+    keys.forEach(k=>{
+      const d=new Date(k+"T00:00:00"), data=days[k]||{}, st=effStatus(k,d);
+      const row=document.createElement("div"); row.className="cmprow"+(st==="bit"?" is-bit":st==="clean"?" is-clean":"");
+      const lab=document.createElement("div"); lab.className="cmpdate";
+      const b=document.createElement("b"); b.textContent=d.toLocaleDateString(undefined,{weekday:"short"}).toUpperCase().replace(".","");
+      const sp=document.createElement("span"); sp.textContent=d.toLocaleDateString(undefined,{month:"short",day:"numeric",year: d.getFullYear()!==today.getFullYear()?"numeric":undefined});
+      lab.append(b,sp); row.appendChild(lab);
+      HANDS.forEach(([hand,name])=>{
+        const id=handPhoto(data,hand), url=photoUrl(id);
+        const el=document.createElement("button"); el.className="cmpph"+(id?"":" none");
+        if(id){ const img=document.createElement("img"); img.src=url; img.alt=""; img.loading="lazy"; el.appendChild(img);
+          el.setAttribute("aria-label",`${name} photo, ${d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})}`);
+          el.onclick=()=>openPhoto(img.src,k,hand); }
+        else { el.textContent="—"; el.disabled=true; el.setAttribute("aria-label",`No ${name.toLowerCase()} photo`); }
+        row.appendChild(el);
+      });
+      list.appendChild(row);
+    });
+  }
+  let comparing=false;
+  $("viewBtn").onclick=()=>{
+    comparing=!comparing;
+    $("viewBtn").setAttribute("aria-pressed",String(comparing));
+    $("viewBtn").textContent = comparing ? "WEEK VIEW" : "COMPARE VIEW";
+    $("compare").hidden=!comparing; $("tracker").hidden=comparing;
+    window.scrollTo(0,0);
+    if(comparing) renderCompare();
+    else requestAnimationFrame(()=>{ sizeSpacers(); centerOn(current,false); wheel(); });
+  };
 
   // ---------- events ----------
   $("file").onchange=async e=>{
